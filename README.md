@@ -4,6 +4,8 @@
 
 > Она не имеет живого хозяина — просто выполняет последнюю волю. Предположительно, одного пирата.
 
+[Modrinth](https://modrinth.com/mod/black-mark) · [GitHub Releases](https://github.com/Holego/black-mark/releases) · Лицензия: MIT
+
 ---
 
 ## Что происходит в игре
