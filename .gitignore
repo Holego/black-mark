@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# ForgeGradle
+run/
+runs/
+src/generated/resources/.cache/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+bin/
+eclipse/
