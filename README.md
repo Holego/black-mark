@@ -1,101 +1,22 @@
 # Black Mark
 
-A mod for **Minecraft 1.20.1, Forge 47.4.10**. Built for multiplayer: all logic lives on the server, the client only renders.
+Minecraft 1.20.1, Forge 47.4.10. Multiplayer, server-authoritative — all logic on the server, the client only renders.
 
-> It has no living master. It simply carries out a last will. A pirate's, presumably.
-
-[Modrinth](https://modrinth.com/mod/black-mark) · [GitHub Releases](https://github.com/Holego/black-mark/releases) · License: MIT
-
----
-
-## What happens in game
-
-Every 5 minutes (configurable) the server rolls a die on every player. The chance is tiny, but it climbs:
-
-| Condition | Multiplier |
-|---|---|
-| Coastal biome (beach / ocean) | ×6 |
-| Night | ×2 |
-| Thunderstorm | ×2.5 |
-| "Raid day" — every 13th in-game day | ×8 |
-
-All of it stacks: at night, on a beach, in a storm, on a raid day, the chance is 240 times the base rate. But there's no requirement — the mark can settle on someone who has never seen the ocean.
-
-The chosen player finds the **Black Mark** in their inventory. It:
-
-- **cannot be dropped** — `Q` does nothing; no item entity for it exists in the world, ever;
-- **cannot be stashed** — a chest, a shulker, an item frame, someone else's container: it's back in your pack the same tick;
-- **cannot be picked up while it's mist** — the click passes straight through;
-- **survives death** — it's already back in the inventory after respawn;
-- keeps score of every attempt to get rid of it. Each one is **defiance**, and every active curse answers to it.
-
-The mark constantly drifts between two states:
-
-- **Mist** (200–700 ticks) — translucent, the slot is filled with haze, cannot be taken;
-- **Flesh** (60–200 ticks) — can be lifted with the cursor, but it runs back down.
-
-Any attempt to touch it **immediately flips its state** — exactly as the lore describes.
+[Modrinth](https://modrinth.com/mod/black-mark) (full description, curse list, lore) · [Releases](https://github.com/Holego/black-mark/releases) · License: MIT
 
 ---
 
 ## Curses
 
-The mark is the carrier. The curse is what it brings — usually one, with a 6% chance of two.
+One interface, one registry line each.
 
-| Curse | What it actually does |
+| Curse | id |
 |---|---|
-| **Clinging** (`slot_devourer`) | Inventory slots around the mark go black and stop working. Spreads every 8 minutes and with every act of defiance, up to 12 slots. A blocked slot can't be selected in the hotbar and nothing can be placed in it — items get pushed out. |
-| **Feeble-mindedness** (`dementia`) | Lies about everything in your pack — see below. Chat speech gets slurred. Every 45 seconds, two hotbar slots silently swap places. |
-| **Blight** (`blight`) | Every 3 minutes, a stack of food in the inventory rots. Saturation from any meal is halved. Natural regeneration doesn't work — only potions, golden apples and beacons can heal. |
-| **Everlasting Wounds** (`eternal_wounds`) | Any hit dealing 4+ damage takes half a heart **permanently**, for as long as the mark stays. Up to 8 half-hearts. Lost hearts render black. |
-| **Dead Man's Tongue** (`pirate`) | The pirate shows through the bearer: someone else's speech, outbursts in chat, blows against allies, and gold-driven frenzy — see below. |
-
-All of this is inventory and interface mechanics, not potion effects. There is no "Weakness" anywhere in the effects list.
-
-### The veil of feeble-mindedness
-
-Two separate lies, each with its own way to be seen through.
-
-**Enchantments are swapped.** While an item just sits in the pack, its tooltip shows *other, entirely real-looking* enchantments — "Sharpness IV" where it's actually "Bane of Arthropods II". Not garbled letters — a plausible untruth you'd believe. The lie is **stable** per item (seeded from the item and its NBT), so the tooltip doesn't flicker between variants: the bearer is consistently wrong. The truth returns only once the item is **worn or held** — the only way to learn what sword you actually have is to pick it up.
-
-**Names and descriptions drift until you've touched them.** Letters are swapped for other letters of the same alphabet. This clears for one specific item the moment the bearer has actually handled it — tapped the slot, or lifted it onto the cursor. Anything never touched stays a stranger. The memory is keyed by "item + NBT", so moving a stack between slots doesn't reset it, and logging off the server wipes it clean again.
-
-Enchantment lines are never scrambled letter-by-letter — they follow their own rule. The item's mechanics never change at all: only the interface lies, the sword hits exactly as it always did. All of this logic is client-side (`client/DementiaVeil.java`) and reads only what the server has already synced.
-
----
-
-### Dead Man's Tongue
-
-The mark carries out a pirate's last will, and over time the pirate starts showing through the bearer.
-
-**Speech.** Whole words are substituted, not individual letters — the sentence stays readable, the bearer is possessed, not unintelligible. "hello" → "ahoy", "yes" → "aye", "money" → "doubloons". Works in both Russian and English — the language is picked by whether the text contains Cyrillic, and the oaths are matched to it. Case is preserved.
-
-The profanity is salty sailor oaths ("Shiver me timbers!", "Blast me barnacles!"), not real swearing. That's a deliberate choice: this is a server mod, and automatic foul language coming out of a player's mouth means complaints and bans. It reads just as piratical without putting anyone at risk. The list lives in `util/PirateTongue.java`.
-
-**Shouting.** A message the bearer actually typed sometimes comes out in ALL CAPS (`shoutOnSendChance`, 25%). On top of that, roughly every ninety seconds the pirate bellows into chat entirely on his own — under the bearer's name, in gold.
-
-**Striking allies.** Every 45 seconds, with a 15% chance, the bearer swings at the nearest ally within 3.5 blocks: a player, a tamed animal, a villager, or an iron golem. Half a heart, with a swing animation and a shout. **With PvP disabled server-side, vanilla's own check simply refuses the hit on a player** — there is no bypass and there won't be one. Striking players can be turned off entirely with the `strikePlayers` flag.
-
-**Gold frenzy.** The bearer senses gold in their inventory, lying on the ground within 8 blocks, and buried in the walls within 5 blocks — a gold vein in a cave triggers the frenzy just as well. For 20 seconds the screen is washed in a pulsing golden haze, shouting and striking become four times as likely, and **gold cannot be dropped at all**. Trying to get rid of the mark also triggers the frenzy.
-
-Scanning blocks is the one place in the mod that actually costs server time: an 11×11×11 cube every 3 seconds per cursed player. `goldScanRadius = 0` turns off the search through walls, leaving only the inventory and the ground.
-
-## Getting free: the Wake
-
-There is exactly one way out — the very case from the lore: a gathering for the lost, from whose ashes the mark was once seen to dissolve into the air.
-
-All of the following, at once:
-
-1. The mark must have been carried **at least 25 minutes** — any sooner, and it "hasn't had its fill";
-2. **Night**;
-3. **A coastal biome** (beach or ocean);
-4. **A lit campfire**;
-5. Enough players nearby (within 12 blocks) — 1 by default, though 2+ makes more sense on a real server;
-6. The mark **in the main hand**, a **gold ingot in the off hand** — the tribute.
-
-Right-click the campfire. It goes out, the ingot is consumed, the mark dissolves. If anything doesn't line up, it will say what's missing.
-
----
+| Clinging | `slot_devourer` |
+| Feeble-mindedness | `dementia` |
+| Blight | `blight` |
+| Everlasting Wounds | `eternal_wounds` |
+| Dead Man's Tongue | `pirate` |
 
 ## Adding your own curse
 
@@ -235,7 +156,7 @@ client/        rendering: blackened slots, mist, wounds, drifting names
 command/       /blackmark for admins
 ```
 
-The key invariant is held by `MarkManager.sweep()`: a marked player carries **exactly one** mark, **inside their pack**, and nowhere else. Sweep runs every tick and catches every route out — dropping, death, `/clear`, foreign containers, the cursor, shulkers, other mods.
+`MarkManager.sweep()` holds the one invariant everything else depends on: a marked player carries exactly one mark, inside their pack, and nowhere else. It runs every tick and catches every route out — dropping, death, `/clear`, foreign containers, the cursor, shulkers, other mods.
 
 ---
 
